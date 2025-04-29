@@ -1,50 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>3D Model Viewer with Hotspot</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-        }
+  <title>Click to Show Info</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    model-viewer {
+      width: 100%;
+      height: 100vh;
+      background-color: #fff;
+    }
 
-        model-viewer {
-            width: 100%;
-            height: 100vh;
-        }
-
-        .hotspot {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #000;
-            pointer-events: auto;
-            transform: translate(-50%, -50%);
-        }
-    </style>
+    .hotspot {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #000;
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+    }
+  </style>
 </head>
 <body>
 
-<model-viewer src="assy.glb" 
-              camera-controls 
-              ar 
+<model-viewer id="modelViewer"
+              src="assy.glb"
+              camera-controls
               environment-image="neutral"
+              exposure="1"
               shadow-intensity="1"
-              interaction-prompt="none"
-              exposure="1">
-
-    <!-- Ye hotspot 3D space me (0,0,0) point pe lagega -->
-    <div class="hotspot" 
-         slot="hotspot-1" 
-         data-position="0 0 0" 
-         data-normal="0 1 0">
-        🔍 Info: Center Part<br>Size: 20x30 mm
-    </div>
-
+              interaction-prompt="none">
 </model-viewer>
+
+<script>
+  const modelViewer = document.getElementById("modelViewer");
+
+  modelViewer.addEventListener("click", (event) => {
+    const rect = modelViewer.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+
+    const hit = modelViewer.positionAndNormalFromPoint(clickX, clickY);
+    if (!hit) {
+      console.log("No 3D point hit.");
+      return;
+    }
+
+    // Remove existing hotspot (optional)
+    const oldHotspot = modelViewer.querySelector(".hotspot");
+    if (oldHotspot) oldHotspot.remove();
+
+    const hotspot = document.createElement("div");
+    hotspot.classList.add("hotspot");
+    hotspot.setAttribute("slot", "hotspot-click");
+    hotspot.setAttribute("data-position", hit.position.join(" "));
+    hotspot.setAttribute("data-normal", hit.normal.join(" "));
+    hotspot.innerHTML = `📏 Custom Info<br>X: ${hit.position[0].toFixed(2)}<br>Y: ${hit.position[1].toFixed(2)}<br>Z: ${hit.position[2].toFixed(2)}`;
+    
+    modelViewer.appendChild(hotspot);
+  });
+</script>
 
 </body>
 </html>
