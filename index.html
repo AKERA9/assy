@@ -2,67 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>3D Model Click Info</title>
+  <title>Click to Show Coordinates</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-    }
-
     model-viewer {
       width: 100%;
       height: 100vh;
-      background-color: #fff;
     }
-
-    .info-box {
+    .tooltip {
       position: absolute;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid #333;
+      background: white;
+      color: black;
+      padding: 6px 10px;
       border-radius: 6px;
-      padding: 8px 12px;
-      color: #000;
       font-size: 14px;
+      border: 1px solid #333;
+      display: none;
+      z-index: 100;
       pointer-events: none;
-      z-index: 10;
     }
   </style>
 </head>
 <body>
 
-<model-viewer id="model" src="assy.glb"
-              camera-controls
-              exposure="1"
-              environment-image="neutral"
-              shadow-intensity="1"
-              style="position:relative;">
+<model-viewer id="modelViewer" src="assy.glb" camera-controls auto-rotate background-color="#fff">
 </model-viewer>
 
-<div id="info" class="info-box" style="display: none;"></div>
+<div id="tooltip" class="tooltip"></div>
 
 <script>
-  const viewer = document.getElementById("model");
-  const infoBox = document.getElementById("info");
+  const modelViewer = document.getElementById('modelViewer');
+  const tooltip = document.getElementById('tooltip');
 
-  viewer.addEventListener("click", (event) => {
-    const rect = viewer.getBoundingClientRect();
+  modelViewer.addEventListener('click', async (event) => {
+    const rect = modelViewer.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    const hit = viewer.positionAndNormalFromPoint(x, y);
-    if (!hit) {
-      infoBox.style.display = "none";
+    const hitResult = await modelViewer.positionAndNormalFromPoint(x, y);
+    if (!hitResult) {
+      tooltip.style.display = "none";
       return;
     }
 
-    const [px, py, pz] = hit.position.map(v => v.toFixed(2));
-
-    infoBox.innerHTML = `<strong>Coordinates</strong><br>X: ${px} mm<br>Y: ${py} mm<br>Z: ${pz} mm`;
-    infoBox.style.left = `${event.clientX + 10}px`;
-    infoBox.style.top = `${event.clientY - 40}px`;
-    infoBox.style.display = "block";
+    const [px, py, pz] = hitResult.position.map(val => val.toFixed(2));
+    tooltip.innerHTML = `X: ${px} mm<br>Y: ${py} mm<br>Z: ${pz} mm`;
+    tooltip.style.left = `${event.clientX + 10}px`;
+    tooltip.style.top = `${event.clientY - 30}px`;
+    tooltip.style.display = 'block';
   });
 </script>
 
