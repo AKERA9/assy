@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>3D Click Info Viewer</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer@1.12.1/dist/model-viewer.min.js"></script>
+  <title>3D Model Click Info</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     body, html {
       margin: 0;
@@ -17,32 +17,34 @@
       background-color: #fff;
     }
 
-    .hotspot {
+    .info-box {
+      position: absolute;
       background: rgba(255, 255, 255, 0.95);
-      border: 1px solid #aaa;
+      border: 1px solid #333;
       border-radius: 6px;
       padding: 8px 12px;
       color: #000;
       font-size: 14px;
       pointer-events: none;
-      transform: translate(-50%, -50%);
+      z-index: 10;
     }
   </style>
 </head>
 <body>
 
-<model-viewer id="modelViewer"
-              src="assy.glb"
+<model-viewer id="model" src="assy.glb"
               camera-controls
-              ar
-              ar-modes="webxr scene-viewer quick-look"
+              exposure="1"
               environment-image="neutral"
               shadow-intensity="1"
-              exposure="1">
+              style="position:relative;">
 </model-viewer>
 
+<div id="info" class="info-box" style="display: none;"></div>
+
 <script>
-  const viewer = document.querySelector("#modelViewer");
+  const viewer = document.getElementById("model");
+  const infoBox = document.getElementById("info");
 
   viewer.addEventListener("click", (event) => {
     const rect = viewer.getBoundingClientRect();
@@ -50,29 +52,17 @@
     const y = event.clientY - rect.top;
 
     const hit = viewer.positionAndNormalFromPoint(x, y);
-
     if (!hit) {
-      console.log("No hit detected.");
+      infoBox.style.display = "none";
       return;
     }
 
-    // Remove existing hotspot
-    const old = viewer.querySelector(".hotspot");
-    if (old) old.remove();
+    const [px, py, pz] = hit.position.map(v => v.toFixed(2));
 
-    const hotspot = document.createElement("div");
-    hotspot.className = "hotspot";
-    hotspot.setAttribute("slot", "hotspot-info");
-    hotspot.setAttribute("data-position", hit.position.join(" "));
-    hotspot.setAttribute("data-normal", hit.normal.join(" "));
-    hotspot.innerHTML = `
-      <strong>Info:</strong><br>
-      X: ${hit.position[0].toFixed(2)}<br>
-      Y: ${hit.position[1].toFixed(2)}<br>
-      Z: ${hit.position[2].toFixed(2)}
-    `;
-
-    viewer.appendChild(hotspot);
+    infoBox.innerHTML = `<strong>Coordinates</strong><br>X: ${px} mm<br>Y: ${py} mm<br>Z: ${pz} mm`;
+    infoBox.style.left = `${event.clientX + 10}px`;
+    infoBox.style.top = `${event.clientY - 40}px`;
+    infoBox.style.display = "block";
   });
 </script>
 
