@@ -1,62 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Click to Show Info</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <title>Test Click Hotspot</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer@latest/dist/model-viewer.min.js"></script>
   <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
     model-viewer {
       width: 100%;
       height: 100vh;
-      background-color: #fff;
+      background: #fff;
     }
 
     .hotspot {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255,255,255,0.95);
       padding: 6px 10px;
+      border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 14px;
       color: #000;
-      pointer-events: auto;
       transform: translate(-50%, -50%);
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
 
-<model-viewer id="modelViewer"
+<model-viewer id="mv"
               src="assy.glb"
               camera-controls
-              environment-image="neutral"
               exposure="1"
-              shadow-intensity="1"
-              interaction-prompt="none">
+              ar
+              ar-modes="webxr scene-viewer quick-look"
+              environment-image="neutral"
+              shadow-intensity="1">
 </model-viewer>
 
 <script>
-  const modelViewer = document.getElementById("modelViewer");
+  const modelViewer = document.querySelector("#mv");
 
   modelViewer.addEventListener("click", (event) => {
-    const rect = modelViewer.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const clickY = event.clientY - rect.top;
+    const bounds = modelViewer.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
 
-    const hit = modelViewer.positionAndNormalFromPoint(clickX, clickY);
-    if (!hit) {
-      console.log("No 3D point hit.");
+    const hitResult = modelViewer.positionAndNormalFromPoint(x, y);
+
+    if (!hitResult) {
+      console.log("No 3D point detected.");
       return;
     }
 
-    // Remove existing hotspot (optional)
-    const oldHotspot = modelViewer.querySelector(".hotspot");
-    if (oldHotspot) oldHotspot.remove();
+    const existing = modelViewer.querySelector(".hotspot");
+    if (existing) existing.remove();
 
     const hotspot = document.createElement("div");
-    hotspot.classList.add("hotspot");
-    hotspot.setAttribute("slot", "hotspot-click");
-    hotspot.setAttribute("data-position", hit.position.join(" "));
-    hotspot.setAttribute("data-normal", hit.normal.join(" "));
-    hotspot.innerHTML = `📏 Custom Info<br>X: ${hit.position[0].toFixed(2)}<br>Y: ${hit.position[1].toFixed(2)}<br>Z: ${hit.position[2].toFixed(2)}`;
-    
+    hotspot.className = "hotspot";
+    hotspot.setAttribute("slot", "hotspot-info");
+    hotspot.setAttribute("data-position", hitResult.position.join(" "));
+    hotspot.setAttribute("data-normal", hitResult.normal.join(" "));
+    hotspot.innerHTML = `📍 X: ${hitResult.position[0].toFixed(2)}<br>
+                         Y: ${hitResult.position[1].toFixed(2)}<br>
+                         Z: ${hitResult.position[2].toFixed(2)}`;
+
     modelViewer.appendChild(hotspot);
   });
 </script>
