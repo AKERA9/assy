@@ -39,11 +39,10 @@
     scene.add(light);
 
     const loader = new GLTFLoader();
-    loader.load('assy.glb', function(gltf) {
-        scene.add(gltf.scene);
-    }, undefined, function(error) {
-        console.error(error);
-    });
+loader.load('/assy.glb', function (gltf) {
+    scene.add(gltf.scene);
+});
+
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
