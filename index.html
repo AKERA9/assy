@@ -1,68 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>3D Model Viewer</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
     #info {
       position: absolute;
       top: 10px;
       left: 10px;
       background: white;
       padding: 8px;
-      border-radius: 4px;
-      font-family: sans-serif;
-      z-index: 10;
+      font-family: Arial, sans-serif;
+      z-index: 1;
+    }
+    canvas {
+      display: block;
     }
   </style>
 </head>
 <body>
   <div id="info">Click on model to get dimensions</div>
 
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
-    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/controls/OrbitControls.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
+  <!-- Three.js and loaders -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
+  <script>
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-
-    // Lights
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
     const light = new THREE.HemisphereLight(0xffffff, 0x444444);
     light.position.set(0, 20, 0);
     scene.add(light);
 
-    const loader = new GLTFLoader();
-    loader.load('public/assy.glb', function(gltf) {
+    const loader = new THREE.GLTFLoader();
+    loader.load('assy.glb', function (gltf) {
       const model = gltf.scene;
       scene.add(model);
-    }, undefined, function(error) {
-      console.error(error);
-    });
 
-    camera.position.set(0, 2, 5);
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          child.userData.originalColor = child.material.color.clone();
+        }
+      });
 
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    const info = document.getElementById("info");
+      model.position.set(0, 0, 0);
+      camera.position.set(2, 2, 5);
+      controls.update();
 
-    window.addEventListener('click', (event) => {
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
 
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(scene.children, true);
-      if (intersects.length > 0) {
-        const point = intersects[0].point;
-        info.innerText = `X: ${point.x.toFixed(2)}, Y: ${point.y.toFixed(2)}, Z: ${point.z.toFixed(2)}`;
-      }
+      window.addEventListener('click', (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(model.children, true);
+        if (intersects.length > 0) {
+          const intersected = intersects[0].object;
+          const box = new THREE.Box3().setFromObject(intersected);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          document.getElementById('info').innerText =
+            `Clicked part size: X=${size.x.toFixed(2)}, Y=${size.y.toFixed(2)}, Z=${size.z.toFixed(2)}`;
+        }
+      });
+
+      animate();
+    }, undefined, function (error) {
+      console.error('Error loading model:', error);
     });
 
     function animate() {
@@ -70,8 +86,6 @@
       controls.update();
       renderer.render(scene, camera);
     }
-
-    animate();
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
