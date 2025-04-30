@@ -40,7 +40,7 @@
     scene.add(light);
 
     const loader = new GLTFLoader();
-    loader.load('/assy.glb', function(gltf) {
+    loader.load('assy.glb', function(gltf) {
       const model = gltf.scene;
       scene.add(model);
     }, undefined, function(error) {
